@@ -84,7 +84,7 @@ class PingPong
     static void TopSearchItem(SqlConnection cnn, MPI.Intracommunicator comm)
     {
         List<string> subElements;
-        string searchTarget = "790 Shelbyville Road";
+        string searchTarget = "55A8E43-A1C1-4320-B6F9-6A";
         string query = $"SELECT CarrierTrackingNumber from {tabel}";
         Stopwatch stopWatch = new Stopwatch();
 
