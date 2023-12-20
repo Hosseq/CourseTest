@@ -10,7 +10,7 @@ class PingPong
         int answer;
 
         Console.WriteLine("Choose what action do you want to do:");
-        Console.WriteLine("1. Find order ...");
+        Console.WriteLine("1. Find order with ID = 55A8E43-A1C1-4320-B6F9-6A");
         Console.WriteLine("2. Get hash of table");
         Console.WriteLine("3. Sort id of orders");
 
@@ -32,8 +32,9 @@ class PingPong
                 switch (operation)
                 {
                     case 1:
-                        TopSearchItem(cnn, comm);
-                        SequentalSearch("790 Shelbyville Road`");
+                        string searchTarget = "55A8E43-A1C1-4320-BDF9-6A";
+                        TopSearchItem(cnn, comm, searchTarget);
+                        SequentalSearch(searchTarget);
                         break;
                     case 2:
                         TopHash(cnn, comm);
@@ -81,10 +82,10 @@ class PingPong
 
     }
 
-    static void TopSearchItem(SqlConnection cnn, MPI.Intracommunicator comm)
+    static void TopSearchItem(SqlConnection cnn, MPI.Intracommunicator comm, string searchTarget)
     {
         List<string> subElements;
-        string searchTarget = "55A8E43-A1C1-4320-B6F9-6A";
+        //string searchTarget = "55A8E43-A1C1-4320-B6F9-6A";
         string query = $"SELECT CarrierTrackingNumber from {tabel}";
         Stopwatch stopWatch = new Stopwatch();
 
@@ -319,12 +320,17 @@ class PingPong
                 answer.Add(Convert.ToString(item.GetHashCode()));
 
             }
+            stopWatch.Stop();
+
+            printTime(stopWatch, "Subtask ended with time: ");
+
+            stopWatch.Start();
 
             comm.Send(answer, 0, 1);
 
             stopWatch.Stop();
 
-            printTime(stopWatch, "Subtask ended with time: ");
+            printTime(stopWatch, "Subtask sended with time: ");
 
             //Console.WriteLine("{0} process completed task! with size {1}", MPI.Environment.HostRank, part.Count);
             //zConsole.WriteLine("Last element: {0}", part.Last());
@@ -355,11 +361,18 @@ class PingPong
 
             part.Sort();
 
-            comm.Send(part, 0, 1);
-
             stopWatch.Stop();
 
             printTime(stopWatch, "Subtask ended with time: ");
+
+            stopWatch.Start();
+
+            comm.Send(part, 0, 1);
+
+
+            stopWatch.Stop();
+
+            printTime(stopWatch, "Subtask sended with time: ");
         }
 
 
@@ -409,7 +422,6 @@ class PingPong
 
         foreach (string item in elements)
         {
-
             answer.Add(Convert.ToString(item.GetHashCode()));
         }
 
