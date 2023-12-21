@@ -10,9 +10,6 @@ class PingPong
     //Основные такблицы, с которыми производится работа
     static string tabel = "Sales.OrderTracking";
     static string tabelPasswords = "Person.Password";
-
-
-
     
     static void Main(string[] args)
     {
@@ -255,7 +252,7 @@ class PingPong
         List<int> elements = MakeRequestInt(cnn, query);
         cnn.Close();
 
-        //Масси для результата
+        //Массив для результата
         int[] result = new int[elements.Count + 20];
 
         //Кол-во подпроцессов
@@ -285,7 +282,7 @@ class PingPong
                         subElements.Add(elements[j]);
                     }
                 }
-                //Console.WriteLine(subElements[0]);
+                
                 comm.Send(subElements, dest, 0);
             }
             //Если последний подпроцесс
@@ -303,40 +300,39 @@ class PingPong
                 //Отправляем массив с числами
                 comm.Send(subElements, dest, 0);
             }
-
-
         }
 
         stopWatch.Stop();
-
         printTime(stopWatch, "Sending data ended with time: ");
 
         stopWatch.Start();
+        
 
+        //Получаем ответы от подпроцессов
         for (int i = 1; i < comm.Size; i++)
         {
-
+            //List для принятия данных
             List<int> temp = new List<int>(2048);
+            //Очищаем для следующего набора данных
             temp.Clear();
+            //Получаем данные
             temp.AddRange(comm.Receive<List<int>>(i, 1));
-            Console.WriteLine(temp[0] + "---"  + temp.Count);
-            Console.WriteLine((((temp[0] - minElem) / portionSize) * temp.Count) + temp.Count);
 
+            //Помещаем элементы в сортированном порядке
             for(int j = 0; j < temp.Count; j++) 
             {
-                result[(((temp[0] - minElem) / portionSize) * temp.Count)  + j] = temp[j];
+                //Номер подпроцесса по первому элементу
+                int index = ((temp[0] - minElem) / portionSize);
+
+                result[(index * temp.Count)  + j] = temp[j];
             }
-            Console.WriteLine((temp[0] - minElem));
-            //result.InsertRange(minElem - ()temp[0], temp);
         }
 
-        Console.WriteLine(result[0]);
-        Console.WriteLine(result.Length);
-
-        for (int i = 1; i < 20; i++) 
-        {
-            Console.WriteLine(result[result.Length - i]);
-        }
+        //Вывод 20 первыых элементов
+        //for (int i = 0; i < 20; i++) 
+        //{
+        //    Console.WriteLine(result[i]);
+        //}
 
         stopWatch.Stop();
         printTime(stopWatch, "Mission completed with time: ");
@@ -395,86 +391,91 @@ class PingPong
     {
         while (true)
         {
+            //List принимаемых данных
             List<string> part;
-            string searchTarget;
+            string command;
             List<string> answer = new List<string>(100);
 
-            searchTarget = comm.Receive<string>(0, 0);
+            //получаем команду от главного процесса
+            command = comm.Receive<string>(0, 0);
 
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-
-            if (searchTarget == "MPI.Kill")
+            //если команда оконочания процесса - то завершаем процесс
+            if (command == "MPI.Kill")
             {
                 break;
             }
 
+            //Таймер для отсчёта времени работы подпроцесса
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+            
+            //Получаем данные
             part = comm.Receive<List<string>>(0, 0);
 
+            //получаем экземпляр для хэширования SHA512
             var alg = SHA512.Create();
+
+            //Каждый элемент хэшируем
             foreach (string item in part)
             {
                 alg.ComputeHash(Encoding.UTF8.GetBytes(item));
-                answer.Add(BitConverter.ToString(alg.Hash));
+                if(alg.Hash != null) answer.Add(BitConverter.ToString(alg.Hash));
 
             }
-            stopWatch.Stop();
 
+            stopWatch.Stop();
             printTime(stopWatch, "Subtask ended with time: ");
 
             stopWatch.Start();
-
             comm.Send(answer, 0, 1);
 
             stopWatch.Stop();
-
             printTime(stopWatch, "Subtask sended with time: ");
-
-            //Console.WriteLine("{0} process completed task! with size {1}", MPI.Environment.HostRank, part.Count);
-            //zConsole.WriteLine("Last element: {0}", part.Last());
         }
 
 
     }
 
+    //Метод для поиска в подпроцессах
     static void SubSorting(MPI.Intracommunicator comm)
     {
         while (true)
         {
+            //List для данных на получение и отправку
             List<int> part;
             string searchTarget;
-            List<string> answer = new List<string>(100);
 
             searchTarget = comm.Receive<string>(0, 0);
-
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
 
             if (searchTarget == "MPI.Kill")
             {
                 break;
             }
 
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+
+            //получаем входные данные
             part = comm.Receive<List<int>>(0, 0);
+
+            //сортируем их встроенной функцией
             part.Sort();
 
             stopWatch.Stop();
-
             printTime(stopWatch, "Subtask ended with time: ");
 
+            //отправляем результат
             stopWatch.Start();
-
             comm.Send(part, 0, 1);
 
-
             stopWatch.Stop();
-
             printTime(stopWatch, "Subtask sended with time: ");
         }
 
 
     }
 
+    //Метод для последовательного поиска
     static void SequentalSearch(string searchTarget)
     {
         Stopwatch stopWatch = new Stopwatch();
@@ -497,11 +498,11 @@ class PingPong
         }
 
         stopWatch.Stop();
-
         printTime(stopWatch, "Sequental ended with time: ");
 
     }
 
+    //Метод для хэширования в одном процессе
     static void SequentalHash()
     {
         Stopwatch stopWatch = new Stopwatch();
@@ -515,40 +516,41 @@ class PingPong
 
         List<string> answer = new List<string>(100);
 
-
+        //Получаем экземпляр класса SHA512
         var alg = SHA512.Create();
         foreach (string item in elements)
         {
             alg.ComputeHash(Encoding.UTF8.GetBytes(item));
-            answer.Add(BitConverter.ToString(alg.Hash));
+            if (alg.Hash != null) answer.Add(BitConverter.ToString(alg.Hash));
         }
 
         stopWatch.Stop();
-
         printTime(stopWatch, "Sequental ended with time: ");
 
     }
 
+    //Метод для сортировки в одном процессе
     static void SequentalSorting()
     {
         Stopwatch stopWatch = new Stopwatch();
         stopWatch.Start();
 
+        //Запрос к БД
         string query = $"SELECT SalesOrderID from {tabel}";
 
         SqlConnection cnn = SqlConnect();
         List<int> elements = MakeRequestInt(cnn, query);
         cnn.Close();
 
+        //Сортируем элементы
         elements.Sort();
-        //BubbleSort(ref elements);
 
         stopWatch.Stop();
-
         printTime(stopWatch, "Sequental ended with time: ");
 
     }
 
+    //Метод для подклчения к базе данных
     static SqlConnection SqlConnect()
     {
         string connectionString;
@@ -559,35 +561,42 @@ class PingPong
 
         return cnn;
     }
-
+    
+    //Метод для создания запроса и получение элементов типа String
     static List<string> MakeRequest(SqlConnection cnn, string query)
     {
         SqlCommand command = new SqlCommand(query, cnn);
         SqlDataReader reader = command.ExecuteReader();
 
         List<string> elements = new List<string>(2048);
+        //Пока есть элементы на входе...
         while (reader.Read())
         {
+            //Помещаем их в list
             elements.Add((string)reader.GetValue(0));
         }
 
         return elements;
     }
 
+    //Метод для создания запроса и получения элементов типа Int
     static List<int> MakeRequestInt(SqlConnection cnn, string query)
     {
         SqlCommand command = new SqlCommand(query, cnn);
         SqlDataReader reader = command.ExecuteReader();
 
         List<int> elements = new List<int>(2048);
+        //Пока есть элементы на входе...
         while (reader.Read())
         {
+            //Помещаем их в list
             elements.Add((int)reader.GetValue(0));
         }
 
         return elements;
     }
 
+    //Фнкция для вывода форматированного времени с описанием
     static void printTime(Stopwatch watch, String description)
     {
         TimeSpan ts = watch.Elapsed;
@@ -609,26 +618,5 @@ class PingPong
         answer = Convert.ToInt32(Console.ReadLine());
 
         return answer;
-    }
-
-    static void BubbleSort(ref List<int> a)
-    {
-        int temp;
-
-        foreach (int aa in a)
-
-            for (int p = 0; p <= a.Count - 2; p++)
-            {
-                for (int i = 0; i <= a.Count - 2; i++)
-                {
-                    if (a[i] > a[i + 1])
-                    {
-                        temp = a[i + 1];
-                        a[i + 1] = a[i];
-                        a[i] = temp;
-                    }
-                }
-            }
-
     }
 }
