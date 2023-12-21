@@ -307,7 +307,7 @@ class PingPong
 
         stopWatch.Start();
         
-
+       
         //Получаем ответы от подпроцессов
         for (int i = 1; i < comm.Size; i++)
         {
@@ -321,8 +321,8 @@ class PingPong
             //Помещаем элементы в сортированном порядке
             for(int j = 0; j < temp.Count; j++) 
             {
-                //Номер подпроцесса по первому элементу
-                int index = ((temp[0] - minElem) / portionSize);
+                //Номер подпроцесса по первому элементу                 2000 6000
+                int index = ((temp[0] - minElem) / portionSize); 
 
                 result[(index * temp.Count)  + j] = temp[j];
             }
